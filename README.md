@@ -16,9 +16,8 @@ This project follows **MVVM (Model-View-ViewModel)** architecture.
 - **Jetpack Compose** - UI Toolkit
 - **Retrofit** - API Networking
 - **Room Database** - Local Storage
-- **Hilt** - Dependency Injection
+- **Dagger-Hilt** - Dependency Injection
 - **Coroutines + Flow** - Asynchronous Data Handling
-- **Navigation Component** - Handling App Navigation
 
 ## 🔧 Setup & Installation
 1. Clone the repository in android studio-> sync gradle files and run on emulator 
