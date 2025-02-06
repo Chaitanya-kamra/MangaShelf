@@ -11,9 +11,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.chaitanya.mangashelf.ui.theme.MangaShelfTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -46,7 +48,7 @@ class MainActivity : ComponentActivity() {
                                 onSelectYear = viewModel::selectYear,
                                 onMangaSelected = { manga->
                                     viewModel.updateSelectedManga(manga)
-                                    navController.navigate(Screen.MangaDetail.name)
+                                    navController.navigate("${Screen.MangaDetail.name}/${manga.id}")
                                 },
                                 animatedVisibilityScope = this,
                                 onRefresh = viewModel::fetchMangas,
@@ -55,14 +57,25 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(
-                            route = Screen.MangaDetail.name,
+                            route = "${Screen.MangaDetail.name}/{mangaId}",
+                            arguments = listOf(navArgument("mangaId"){
+                                type = NavType.StringType
+                            })
                         ) {
+                            val mangaId = it.arguments?.getString("mangaId")
                             MangaDetailScreen(
+                                mangaId = mangaId,
                                 uiState = uiState,
-                                onBack = { navController.popBackStack() },
+                                onBack = {
+                                    navController.popBackStack()
+                                },
                                 onFavoriteToggle = viewModel::toggleFavoritefromDetail,
                                 animatedVisibilityScope = this,
-                                onMarksAsRead = viewModel::markAsRead
+                                onMarksAsRead = viewModel::markAsRead,
+                                onSimilarSelected = { manga->
+                                    viewModel.updateSelectedManga(manga)
+                                    navController.navigate(Screen.MangaDetail.name+"/${manga.id}")
+                                }
                             )
                         }
                     }

@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -60,13 +61,15 @@ import com.chaitanya.mangashelf.utility.getFormatedNumber
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SharedTransitionScope.MangaDetailScreen(
+    mangaId:String?,
     animatedVisibilityScope: AnimatedVisibilityScope,
     uiState: MangaUiState,
     onBack: () -> Unit,
     onFavoriteToggle: (String, Boolean) -> Unit,
-    onMarksAsRead: (String) -> Unit
+    onMarksAsRead: (String) -> Unit,
+    onSimilarSelected:(MangaEntity)-> Unit
 ) {
-    val manga = uiState.selectedManga
+    val manga = uiState.mangas.find { it.id == mangaId }
     manga?.let {
         Column(
             modifier = Modifier
@@ -85,7 +88,7 @@ fun SharedTransitionScope.MangaDetailScreen(
                         .build(),
                     modifier = Modifier
                         .blur(radius = 16.dp)
-                        .fillMaxSize(),
+                        .fillMaxSize().animateContentSize(),
                     contentDescription = null,
                     contentScale = ContentScale.Crop
                 )
@@ -156,18 +159,27 @@ fun SharedTransitionScope.MangaDetailScreen(
                         showMarksAsRead = true
                     )
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Similar Mangas (${manga.category})",
-                        style = textStylePop18Lh24Fw700(),
-                        color = Color.White,
-                        modifier = Modifier.padding(16.dp)
-                    )
+                    if (manga.isRead) {
+                        Text(
+                            text = "You Might Like (${manga.category})",
+                            style = textStylePop18Lh24Fw700(),
+                            color = Color.White,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
                 }
             }
-
-            LazyRow(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),) {
-                items(uiState.mangas.filter { it.category == manga.category && it.id != manga.id }, key = {it.id}){
-                    MangaSimilarCard(manga = it)
+            if (manga.isRead) {
+                LazyRow(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),) {
+                    items(uiState.mangas.filter { it.category == manga.category && it.id != manga.id && !it.isRead }
+                        .sortedByDescending { it.popularity }, key = { it.id }) {
+                        MangaSimilarCard(
+                            manga = it,
+                            onSelected = {
+                                onSimilarSelected(it)
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -176,10 +188,15 @@ fun SharedTransitionScope.MangaDetailScreen(
 }
 
 @Composable
-fun MangaSimilarCard(manga: MangaEntity) {
+fun MangaSimilarCard(manga: MangaEntity,onSelected:()->Unit) {
     Column(modifier = Modifier
         .width(150.dp)
-        .padding(8.dp)) {
+        .clip(RoundedCornerShape(12.dp))
+        .clickable {
+            onSelected()
+        }
+        .padding(8.dp)
+    ) {
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(manga.image)
@@ -199,5 +216,28 @@ fun MangaSimilarCard(manga: MangaEntity) {
             style = textStylePop14Lh16Fw500(),
             color = Color.White
         )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(text = "Score :${(manga.score?:0)}",
+            style = textStylePop14Lh16Fw500(),
+            color = Color.White
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ){
+            Icon(
+                imageVector = Icons.Filled.Favorite,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(2.dp))
+            Text(text = manga.popularity?.getFormatedNumber()?:"",
+                style = textStylePop14Lh16Fw500(),
+                color = Color.White
+            )
+
+        }
+
     }
 }
